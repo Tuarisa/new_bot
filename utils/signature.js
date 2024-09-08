@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 
 function createSignature(gameId, staticId, gameData) {
-  const timestamp = Math.floor(Date.now() / 1000);
   const startDate = new Date(gameData.startDate);
   const remainPoints = gameData.remainPoints;
   const maxMultiplier = Math.min(20, 100) / 100;

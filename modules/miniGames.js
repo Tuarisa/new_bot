@@ -34,7 +34,6 @@ async function miniGames(config, bearerToken) {
 
       console.log(`Начинаем мини-игру ${gameId}...`);
       const startResponse = await fetchApi('/start-keys-minigame', 'POST', { miniGameId: gameId }, bearerToken);
-
       if (!startResponse.dailyKeysMiniGames || startResponse.dailyKeysMiniGames.isClaimed) {
         console.log(`Мини-игра ${gameId} уже получена или недоступна`);
         continue;
@@ -54,7 +53,7 @@ async function miniGames(config, bearerToken) {
       const claimResponse = await fetchApi('/claim-daily-keys-minigame', 'POST', {
         miniGameId: gameId,
         cipher: cipher
-      }, config.bearerToken);
+      }, bearerToken);
 
       if (claimResponse && claimResponse.bonus) {
         console.log(`Мини-игра ${gameId} успешно получена, + ${claimResponse.bonus} ${gameId === 'Candles' ? 'ключей' : 'монет'}`);
