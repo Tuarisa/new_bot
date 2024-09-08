@@ -3,7 +3,7 @@ const crypto = require('crypto');
 function createSignature(gameId, staticId, gameData) {
   const startDate = new Date(gameData.startDate);
   const remainPoints = gameData.remainPoints;
-  const maxMultiplier = Math.min(20, 100) / 100;
+  const maxMultiplier = Math.min(45, 100) / 100;
   const number = Math.floor(startDate.getTime() / 1000);
   const numberLen = number.toString().length;
   const index = (number % (numberLen - 2)) + 1;

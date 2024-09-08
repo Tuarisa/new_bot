@@ -1,33 +1,37 @@
 module.exports = {
-  bearerToken: 'Bearer ',
+  bearerToken: '17227....',
   buyUpgrade: {
     enabled: true,
-    interval: 300000, // 5 минут
-    maxPayback: 10000
+    interval: 5 * 60,
+    maxPayback: 10200
   },
   dailyCipher: {
-    enabled: true,
-    interval: 3600000 // 1 час
+    enabled: false,
+    interval: 60 * 60
   },
   tasks: {
     enabled: true,
-    interval: 1800000 // 30 минут
+    interval: 60 * 60
   },
   miniGames: {
     enabled: true,
-    interval: 3600000 // 1 час
+    interval: 15 * 60,
+    supportedGames: ['Tiles', 'Candles'],
+    staticId: ''
   },
   promoCodes: {
     enabled: true,
-    interval: 7200000 // 2 часа
+    interval: 10 * 60,
+    rewardType: ['keys', 'coins'],
+    maxKeys: 8
   },
   buyBoost: {
-    enabled: true,
-    interval: 600000 // 10 минут
+    enabled: false,
+    interval: 60 * 60
   },
   tap: {
-    enabled: true,
-    interval: 30000, // 30 секунд
+    enabled: false,
+    interval: 60,
     minTaps: 10,
     maxTaps: 50
   }
