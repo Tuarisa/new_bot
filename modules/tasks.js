@@ -1,9 +1,9 @@
 const { fetchApi } = require('../utils/api');
 
-async function tasks(config) {
+async function tasks(config, bearerToken) {
   try {
     console.log('Начинаем выполнение задач');
-    const { tasks } = await fetchApi('/list-tasks', 'POST', null, config.bearerToken);
+    const { tasks } = await fetchApi('/list-tasks', 'POST', null, bearerToken);
     
     const incompletedTasks = tasks.filter(t => t.isCompleted === false);
     
@@ -11,7 +11,7 @@ async function tasks(config) {
       console.log('Найдены невыполненные задачи:', incompletedTasks);
       
       const results = await Promise.all(incompletedTasks.map(task => 
-        fetchApi('/check-task', 'POST', { taskId: task.id }, config.bearerToken)
+        fetchApi('/check-task', 'POST', { taskId: task.id }, bearerToken)
       ));
       
       console.log('Результаты выполнения задач:', results);

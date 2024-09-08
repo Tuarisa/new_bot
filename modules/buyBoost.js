@@ -10,7 +10,7 @@ async function buyBoost(config, bearerToken) {
         boostId: boost.id,
         timestamp: Math.floor(Date.now() / 1000)
       }, bearerToken);
-      console.log('Boost purchased:', buyResponse);
+      console.log('Boost purchased');
       return true;
     } else {
       console.log('BoostFullAvailableTaps not available or still on cooldown.');

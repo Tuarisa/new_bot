@@ -2,17 +2,17 @@ const { fetchApi } = require('../utils/api');
 const { createSignature } = require('../utils/signature');
 const { randomSleep } = require('../utils/helpers');
 
-async function miniGames(config) {
+async function miniGames(config, bearerToken) {
   try {
     console.log('Начинаем процесс мини-игр');
-    const configResponse = await fetchApi('/config', 'POST', null, config.bearerToken);
+    const configResponse = await fetchApi('/config', 'POST', null, bearerToken);
     
     if (!configResponse.dailyKeysMiniGames) {
       console.error('Не удалось получить данные о ежедневных мини-играх');
       return;
     }
 
-    const supportedGames = config.modules.miniGames.supportedGames;
+    const supportedGames = config.supportedGames;
 
     for (const gameId of supportedGames) {
       const game = configResponse.dailyKeysMiniGames[gameId];
@@ -33,7 +33,7 @@ async function miniGames(config) {
       }
 
       console.log(`Начинаем мини-игру ${gameId}...`);
-      const startResponse = await fetchApi('/start-keys-minigame', 'POST', { miniGameId: gameId }, config.bearerToken);
+      const startResponse = await fetchApi('/start-keys-minigame', 'POST', { miniGameId: gameId }, bearerToken);
 
       if (!startResponse.dailyKeysMiniGames || startResponse.dailyKeysMiniGames.isClaimed) {
         console.log(`Мини-игра ${gameId} уже получена или недоступна`);

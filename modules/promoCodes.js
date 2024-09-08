@@ -25,78 +25,78 @@ const appConfigs = {
   }
 };
 
-const EVENTS_DELAY = 20000;
+const EVENTS_DELAY = 60000;
 const MAX_RETRIES = 5;
 
 async function login(clientId, appToken, attempt = 0) {
   if (attempt > MAX_RETRIES) {
-    console.log(`Login attempt ${attempt} failed, returning empty token`);
+    console.log(`Попытка входа ${attempt} не удалась, возвращаем пустой токен`);
     return '';
   }
   if (!clientId) {
-    throw new Error('no client id');
+    throw new Error('отсутствует client id');
   }
   try {
     const response = await fetchApi('https://api.gamepromo.io/promo/login-client', 'POST', {
       appToken: appToken,
       clientId: uuidv4(),
       clientOrigin: 'deviceid'
-    });
+    }, null, true);
     if (!response.clientToken) {
-      console.log(`Login attempt ${attempt} failed, retrying...`);
+      console.log(`Попытка входа ${attempt} не удалась, повторяем...`);
       await sleep(5000 * attempt + Math.random() * 20 * 5000);
       return login(clientId, appToken, attempt + 1);
     }
     return response.clientToken;
   } catch (error) {
-    console.error(`Login attempt ${attempt} failed with error: ${error.message}, retrying...`);
+    console.error(`Попытка входа ${attempt} не удалась с ошибкой: ${error.message}, повторяем...`);
     await sleep(5000 * attempt + Math.random() * 20 * 5000);
     return login(clientId, appToken, attempt + 1);
   }
 }
 
-async function emulateProgress(clientToken, promoId) {
+async function emulateProgess(clientToken, promoId) {
   if (!clientToken) {
-    throw new Error('no access token');
+    throw new Error('отсутствует access token');
   }
   try {
     const response = await fetchApi('https://api.gamepromo.io/promo/register-event', 'POST', {
       promoId: promoId,
       eventId: uuidv4(),
       eventOrigin: 'undefined'
-    }, clientToken);
+    }, clientToken, true);
     return response.hasCode;
   } catch (error) {
-    console.error(`Emulate progress failed with error: ${error.message}`);
+    console.error(`Эмуляция прогресса не удалась с ошибкой: ${error.message}`);
     return false;
   }
 }
 
 async function generateKey(clientToken, promoId) {
   if (!clientToken) {
-    throw new Error('no access token');
+    throw new Error('отсутствует access token');
   }
   try {
     const response = await fetchApi('https://api.gamepromo.io/promo/create-code', 'POST', {
       promoId: promoId
-    }, clientToken);
+    }, clientToken, true);
     return response.promoCode;
   } catch (error) {
-    console.error(`Generate key failed with error: ${error.message}`);
+    console.error(`Генерация ключа не удалась с ошибкой: ${error.message}`);
     return '';
   }
 }
 
 async function startProcess(appToken, promoId) {
   try {
-    let tokens = await Promise.all([...Array(4)].map(() => login(uuidv4(), appToken)));
+    let tokens = await Promise.all([...Array(1)].map(() => login(uuidv4(), appToken)));
     tokens = tokens.filter(token => token !== '');
 
     console.log('logins, tokens:', tokens);
 
     const generateKeyPromises = tokens.map(async (token, index) => {
       for (let i = 0; i < 50; i++) {
-        const hasCode = await emulateProgress(token, promoId);
+        const hasCode = await emulateProgess(token, promoId);
         if (hasCode) {
           console.log(`Token ${index + 1} ${token} has code`);
           break;
@@ -116,49 +116,51 @@ async function startProcess(appToken, promoId) {
   }
 }
 
-async function fetchPromos(config) {
+async function fetchPromos(bearerToken) {
   try {
-    const response = await fetchApi('/get-promos', 'POST', null, config.bearerToken);
+    const response = await fetchApi('/get-promos', 'POST', null, bearerToken);
     return response;
   } catch (error) {
     console.error('Error fetching promos:', error);
   }
 }
 
-async function applyPromoCode(promoCode, config) {
+async function applyPromoCode(promoCode, bearerToken) {
   try {
-    const result = await fetchApi('/apply-promo', 'POST', { promoCode }, config.bearerToken);
+    const result = await fetchApi('/apply-promo', 'POST', { promoCode }, bearerToken);
     return result;
   } catch (error) {
     console.error('Error applying promo code:', error);
   }
 }
 
-async function processPromos(config) {
+async function processPromos(config, bearerToken) {
   try {
-    const { states, promos } = await fetchPromos(config);
+    const { states, promos } = await fetchPromos(bearerToken);
     if (!states || states.length == 0) {
       return;
     }
 
-    for (const promo of promos) {
+    const eligiblePromos = promos.filter(promo => {
       let state = states.find(s => s.promoId == promo.promoId);
-      if (!state || state.receiveKeysToday < 4 || state.receiveKeysToday < promo.keysPerDay) {
-        const appConfig = Object.values(appConfigs).find(config => config.promoId === promo.promoId);
-        const receiveKeysToday = state ? state.receiveKeysToday : 0;
+      return !state || state.receiveKeysToday < promo.keysPerDay;
+    });
 
-        const keysToFetch = promo.keysPerDay - receiveKeysToday;
-        let keys;
-        if (appConfig) {
-          keys = await startProcess(appConfig.appToken, appConfig.promoId);
-        } else {
-          keys = await startProcess(promo.promoId, promo.promoId);
-        }
+    if (eligiblePromos.length > 0) {
+      const randomIndex = Math.floor(Math.random() * eligiblePromos.length);
+      const selectedPromo = eligiblePromos[randomIndex];
 
-        for (let i = 0; i < Math.min(keysToFetch, keys.length); i++) {
-          await applyPromoCode(keys[i], config);
-        }
-        break;
+      const appConfig = Object.values(appConfigs).find(config => config.promoId === selectedPromo.promoId);
+      let keys;
+
+      if (appConfig) {
+        keys = await startProcess(appConfig.appToken, appConfig.promoId);
+      } else {
+        keys = await startProcess(selectedPromo.promoId, selectedPromo.promoId);
+      }
+
+      if (keys.length > 0) {
+        await applyPromoCode(keys[0], bearerToken);
       }
     }
   } catch (e) {
