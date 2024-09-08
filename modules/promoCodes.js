@@ -140,8 +140,23 @@ async function processPromos(config, bearerToken) {
     if (!states || states.length == 0) {
       return;
     }
+    let rewardType = config.rewardType;
+    if (config.maxKeys && config.maxKeys > 0 && rewardType.includes('keys')) {
+      const keysPromos = promos.filter(promo => promo.rewardType === 'keys');
+      const totalKeysReceived = keysPromos.reduce((sum, promo) => {
+        const state = states.find(s => s.promoId === promo.promoId);
+        return sum + (state ? state.receiveKeysToday : 0);
+      }, 0);
+      
+      if (totalKeysReceived >= config.maxKeys) {
+        console.log(`Достигнут лимит ключей: ${totalKeysReceived}/${config.maxKeys}`);
+        rewardType = rewardType.filter(type => type !== 'keys');
+      }
+    }
 
-    const eligiblePromos = promos.filter(promo => {
+    const eligiblePromos = promos
+    .filter(promo => rewardType.includes(promo.rewardType))
+    .filter(promo => {
       let state = states.find(s => s.promoId == promo.promoId);
       return !state || state.receiveKeysToday < promo.keysPerDay;
     });
