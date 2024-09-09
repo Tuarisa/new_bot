@@ -40,7 +40,7 @@ async function miniGames(config, bearerToken) {
       }
 
       const waitTime = gameId === 'Candles' 
-        ? 45000
+        ? 15000
         : Math.floor(Math.random() * ( 10 * 60 * 1000 - 5 * 60 * 1000 + 1)) + 5 * 60 * 1000;
 
       console.log(`Ожидание ${waitTime / 1000} секунд, мини-игра ${gameId} будет завершена...`);
